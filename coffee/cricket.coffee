@@ -42,18 +42,61 @@ ns.tokenize = (text) ->
 
 	return tokens
 
+class CNumber
+	constructor: (token) ->
+		@value = Number(token)
+
+	toString: ->
+		@value.toString()
+
+class CList
+	constructor: (@elements) ->
+
+	toString: ->
+		s = "("
+		for i in [0...@elements.length]
+			s += @elements[i].toString()
+			if i < @elements.length - 1
+				s += " "
+		s += ")"
+		return s
+
+class CSymbol
+	constructor: (@name) ->
+
+	toString: ->
+		@name
+
+readEl = (tokens) ->
+	token = tokens.shift()
+
+	if token is "("
+		list = []
+		while true
+			if tokens.length is 0
+				throw new Error "Unmatched ("
+			else if tokens[0] is ")"
+				tokens.shift()
+				break
+			else
+				list.push readEl(tokens)
+		return new CList list
+	else
+		if isNumberString token
+			return new CNumber token
+		else
+			return new CSymbol token
+
 ns.read = (text) ->
 	tokens	= ns.tokenize text
 	program	= []
 	while tokens.length isnt 0
-		token = tokens.shift()
-
-		if isNumberString token
-			program.push Number(token)
-		else
-			throw new Error "Don't know how to read #{token}"
+		program.push readEl tokens
 
 	return program
 
 ns.parse = (text) ->
-	return ns.read text
+	s = ""
+	for el in ns.read text
+		s += el.toString() + "\n"
+	return s
