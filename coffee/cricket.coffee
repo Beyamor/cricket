@@ -95,7 +95,7 @@ ns.read = (text) ->
 
 	return program
 
-ns.parse = (text) ->
+ns.run = (text) ->
 	s = ""
 	for el in ns.read text
 		s += el.toString() + "\n"

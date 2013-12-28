@@ -4,7 +4,7 @@ $ ->
 
 		output =
 			try
-				cricket.parse input
+				cricket.run input
 			catch e
 				e
 
