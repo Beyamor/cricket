@@ -3,4 +3,13 @@ if exports?
 else
 	ns = window.cricket = {}
 
-ns.parse = (text) -> alert text
+isNumber = (n) ->
+	!isNaN(parseFloat(n)) and isFinite(n)
+
+ns.isNumber = isNumber
+
+ns.parse = (text) ->
+	if isNumber text
+		Number(text)
+	else
+		throw new Error "Can't parse text"
