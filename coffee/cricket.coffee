@@ -91,12 +91,21 @@ class CSymbol
 		@name
 
 class CFn
-	constructor: (@call) ->
+	constructor: (@definition) ->
+
+	call: (args) ->
+		if @definition[args.length]?
+			@definition[args.length].call(this, args)
+		else if @definition.more?
+			@definition.more.call(this, args)
+		else
+			throw new Error "No function definition for #{args.length} arguments"
+
 
 	apply: (env, args) ->
 		args = (arg.eval(env) for arg in args)
-		@call(args)
-
+		@call args
+		
 readEl = (tokens) ->
 	token = tokens.shift()
 
@@ -128,34 +137,32 @@ ns.read = (text) ->
 ns.eval = (expression, env) ->
 	return expression.eval(env)
 
-class ArgMismatch extends Error
-	constructor: -> Super "Wrong number of arguments"
-
 binNumOp = ({identity, op}) ->
-	new CFn (args) ->
-		if args.length is 0
-			if identity?
-				new CNumber identity
-			else
-				throw new ArgMismatch
-		else if args.length is 1
-			return args[0]
-		else if args.length is 2
-			[x, y] = args
+	definition =
+		1: ([x]) ->
+			x
+		2: ([x, y]) ->
 			return new CNumber(op(CNumber.value(x), CNumber.value(y)))
-		else
-			[x, y, args...] = args
+		more: ([x, y, args...]) ->
 			z = @call [x, y]
 			args.unshift z
 			return @call args
 
+	if identity?
+		definition[0] = -> new CNumber identity
+
+	new CFn definition
+	
 defaultEnvironment = ->
-	"cons":	new CFn (args) ->
-			new CList args
-	"head":	new CFn ([clist]) ->
-			clist.head()
-	"tail":	new CFn ([clist]) ->
-			clist.tail()
+	"pair":	new CFn
+			2: ([head, tail]) ->
+				new CList [head, tail]
+	"head":	new CFn
+			1:	([clist]) ->
+					clist.head()
+	"tail":	new CFn
+			1:	([clist]) ->
+					clist.tail()
 	"+": binNumOp
 		op:		(x, y) -> x + y
 		identity:	0
