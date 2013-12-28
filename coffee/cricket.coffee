@@ -122,17 +122,35 @@ ns.read = (text) ->
 ns.eval = (expression, env) ->
 	return expression.eval(env)
 
-defaultEnvironment = ->
-	"+": new CFn (args) ->
+binNumOp = ({identity, op}) ->
+	new CFn (args) ->
 		if args.length is 0
-			return new CNumber "0"
+			if identity?
+				new CNumber identity
+			else
+				throw new Error "Not enough args"
 		else if args.length is 1
 			return args[0]
+		else if args.length is 2
+			[x, y] = args
+			return new CNumber(op(CNumber.value(x), CNumber.value(y)))
 		else
 			[x, y, args...] = args
-			z = new CNumber(CNumber.value(x) + CNumber.value(y))
+			z = @call [x, y]
 			args.unshift z
 			return @call args
+
+defaultEnvironment = ->
+	"+": binNumOp
+		op:		(x, y) -> x + y
+		identity:	0
+	"-": binNumOp
+		op:		(x, y) -> x - y
+	"*": binNumOp
+		op:		(x, y) -> x * y
+		identity:	1
+	"/": binNumOp
+		op:		(x, y) -> x / y
 
 ns.run = (text) ->
 	s	= ""
