@@ -46,11 +46,25 @@ class CNumber
 	constructor: (token) ->
 		@value = Number(token)
 
+	eval: ->
+		this
+
 	toString: ->
 		@value.toString()
 
+	@value: (x) ->
+		if x instanceof CNumber
+			return x.value
+		else
+			throw new Error "Can't coerce #{x.constructor.name} to CNumber"
+
 class CList
 	constructor: (@elements) ->
+
+	eval: (env) ->
+		return this if @elements.length is 0
+
+		@elements[0].eval(env).apply(env, @elements.slice(1))
 
 	toString: ->
 		s = "("
@@ -64,8 +78,18 @@ class CList
 class CSymbol
 	constructor: (@name) ->
 
+	eval: (env) ->
+		env[@name]
+
 	toString: ->
 		@name
+
+class CFn
+	constructor: (@call) ->
+
+	apply: (env, args) ->
+		args = (arg.eval(env) for arg in args)
+		@call(args)
 
 readEl = (tokens) ->
 	token = tokens.shift()
@@ -95,8 +119,25 @@ ns.read = (text) ->
 
 	return program
 
+ns.eval = (expression, env) ->
+	return expression.eval(env)
+
+defaultEnvironment = ->
+	"+": new CFn (args) ->
+		if args.length is 0
+			return new CNumber "0"
+		else if args.length is 1
+			return args[0]
+		else
+			[x, y, args...] = args
+			z = new CNumber(CNumber.value(x) + CNumber.value(y))
+			args.unshift z
+			return @call args
+
 ns.run = (text) ->
-	s = ""
+	s	= ""
+	env	= defaultEnvironment()
+
 	for el in ns.read text
-		s += el.toString() + "\n"
+		s += ns.eval el, env
 	return s
