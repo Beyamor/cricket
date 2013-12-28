@@ -4,34 +4,41 @@ else
 	ns = window.cricket = {}
 
 WHITESPACE_CHARS = [" ", "\n", "\r", "\t"]
-isWhitespace = (char) ->
+isWhitespaceChar = (char) ->
 	WHITESPACE_CHARS.indexOf(char) isnt -1
 
-isNumber = (n) ->
+isNumberString = (n) ->
 	!isNaN(parseFloat(n)) and isFinite(n)
 
 ns.tokenize = (text) ->
 	tokens	= []
 	token	= null
 
+	addToken = ->
+		if token?
+			tokens.push token
+			token = null
+
+	push = (something) ->
+		addToken()
+		token = something
+		addToken()
+
 	while text.length isnt 0
 		char	= text[0]
 
 		# TODO Handle strings
-		if isWhitespace char
-			if token?
-				tokens.push token
-				token = null
+		if isWhitespaceChar char
+			addToken()
+		else if char is "("
+			push "("
+		else if char is ")"
+			push ")"
 		else
-			if not token?
-				token = char
-			else
-				token += char
+			token = if token? then token + char else char
 
 		text = text.substring(1)
-
-	if token?
-		tokens.push token
+	addToken()
 
 	return tokens
 
@@ -41,7 +48,7 @@ ns.read = (text) ->
 	while tokens.length isnt 0
 		token = tokens.shift()
 
-		if isNumber token
+		if isNumberString token
 			program.push Number(token)
 		else
 			throw new Error "Don't know how to read #{token}"
