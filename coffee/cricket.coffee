@@ -72,6 +72,9 @@ class CList
 	tail: ->
 		new CList @elements.slice(1)
 
+	prepend: (head) ->
+		new CList [head].concat(@elements)
+
 	toString: ->
 		s = "("
 		for i in [0...@elements.length]
@@ -154,15 +157,18 @@ binNumOp = ({identity, op}) ->
 	new CFn definition
 	
 defaultEnvironment = ->
-	"pair":	new CFn
-			2: ([head, tail]) ->
-				new CList [head, tail]
+	"cons":	new CFn
+			2: ([head, list]) ->
+				list.prepend head
 	"head":	new CFn
 			1:	([clist]) ->
 					clist.head()
 	"tail":	new CFn
 			1:	([clist]) ->
 					clist.tail()
+	"list":	new CFn
+			more: (args) ->
+				new CList args
 	"+": binNumOp
 		op:		(x, y) -> x + y
 		identity:	0
