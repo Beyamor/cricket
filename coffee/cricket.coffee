@@ -66,6 +66,12 @@ class CList
 
 		@elements[0].eval(env).apply(env, @elements.slice(1))
 
+	head: ->
+		@elements[0]
+
+	tail: ->
+		new CList @elements.slice(1)
+
 	toString: ->
 		s = "("
 		for i in [0...@elements.length]
@@ -122,13 +128,16 @@ ns.read = (text) ->
 ns.eval = (expression, env) ->
 	return expression.eval(env)
 
+class ArgMismatch extends Error
+	constructor: -> Super "Wrong number of arguments"
+
 binNumOp = ({identity, op}) ->
 	new CFn (args) ->
 		if args.length is 0
 			if identity?
 				new CNumber identity
 			else
-				throw new Error "Not enough args"
+				throw new ArgMismatch
 		else if args.length is 1
 			return args[0]
 		else if args.length is 2
@@ -141,6 +150,12 @@ binNumOp = ({identity, op}) ->
 			return @call args
 
 defaultEnvironment = ->
+	"cons":	new CFn (args) ->
+			new CList args
+	"head":	new CFn ([clist]) ->
+			clist.head()
+	"tail":	new CFn ([clist]) ->
+			clist.tail()
 	"+": binNumOp
 		op:		(x, y) -> x + y
 		identity:	0
