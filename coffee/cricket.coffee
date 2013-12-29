@@ -92,8 +92,27 @@ class CFn
 			throw new Error "No function definition for #{args.length} arguments"
 
 	apply: (env, args) ->
-		args = (ns.eval(arg, env) for arg in args)
-		@call args
+		args	= (ns.eval(arg, env) for arg in args) unless @isMacro
+		result	= @call args
+
+		if @isMacro
+			console.log result
+			return ns.eval result, env
+		else
+			return result
+
+	@define: (env, argList, body) ->
+		fnEnv		= Object.create(env)
+		argNames	= (symbol.name for symbol in argList)
+		argCount	= argNames.length
+
+		definition = {}
+		definition[argCount] = (args) ->
+			for i in [0...argCount]
+				fnEnv[argNames[i]] = args[i]
+			return ns.eval(body, fnEnv)
+
+		return new CFn definition
 
 readList = (tokens, begin, end) ->
 	els = []
@@ -202,20 +221,6 @@ defaultEnvironment = ->
 			env[symbol.name] = definition
 			return definition
 	
-	"fn": new CSpecialForm
-		2: (env, [argList, body]) ->
-			fnEnv		= Object.create(env)
-			argNames	= (symbol.name for symbol in argList)
-			argCount	= argNames.length
-
-			definition = {}
-			definition[argCount] = (args) ->
-				for i in [0...argCount]
-					fnEnv[argNames[i]] = args[i]
-				return ns.eval(body, fnEnv)
-
-			return new CFn definition
-
 	"quote": new CSpecialForm
 		1: (env, [list]) ->
 			list
@@ -223,6 +228,16 @@ defaultEnvironment = ->
 	"eval": new CSpecialForm
 		1: (env, [expr]) ->
 			ns.eval(ns.eval(expr, env), env)
+
+	"fn": new CSpecialForm
+		2: (env, [argList, body]) ->
+			return CFn.define env, argList, body
+
+	"macro": new CSpecialForm
+		2: (env, [argList, body]) ->
+			fn = CFn.define env, argList, body
+			fn.isMacro = true
+			return fn
 
 	"cons":	new CFn
 			2: ([head, list]) ->
