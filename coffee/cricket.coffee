@@ -131,25 +131,30 @@ readEl = (tokens) ->
 		return new CList readList tokens, "(", ")"
 	if token is "["
 		return readList tokens, "[", "]"
+	else if token is "nil"
+		return null
+	else if token is "true"
+		return true
+	else if token is "false"
+		return false
+	else if isNumberString token
+		return Number token
+	else if token[0] is "'"
+		return ns.read "(quote #{token.substr(1)})"
 	else
-		if token is "nil"
-			return null
-		else if token is "true"
-			return true
-		else if token is "false"
-			return false
-		else if isNumberString token
-			return Number token
-		else
-			return new CSymbol token
+		return new CSymbol token
 
 ns.read = (text) ->
+	readEl ns.tokenize text
+
+ns.readProgram = (text) ->
 	tokens	= ns.tokenize text
 	program	= []
 	while tokens.length isnt 0
 		program.push readEl tokens
 
 	return program
+
 
 resolve = (symbol, env) ->
 	throw new Error "Can only resolve symbols" unless symbol instanceof CSymbol
@@ -265,7 +270,7 @@ defaultEnvironment = ->
 	lispDefinitions = [
 		"(def unless
 		  (macro [pred? if-false if-true]
-		    (list (quote if) pred? if-true if-false)))"
+		    (list 'if pred? if-true if-false)))"
 	]
 
 	for definition in lispDefinitions
@@ -277,6 +282,6 @@ ns.run = (text) ->
 	s	= ""
 	env	= defaultEnvironment()
 
-	for el in ns.read text
+	for el in ns.readProgram text
 		s += toString(ns.eval el, env) + "\n"
 	return s
