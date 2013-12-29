@@ -45,15 +45,6 @@ ns.tokenize = (text) ->
 class CThing
 	eval: -> this
 
-	isTruthy: -> true
-
-class CNil extends CThing
-	toString: -> "nil"
-
-	isTruthy: -> false
-NIL = new CNil
-
-
 class CNumber extends CThing
 	constructor: (token) ->
 		@value = Number(token)
@@ -125,7 +116,7 @@ class CFn extends CThing
 			throw new Error "No function definition for #{args.length} arguments"
 
 	apply: (env, args) ->
-		args = (arg.eval(env) for arg in args)
+		args = (ns.eval(arg, env) for arg in args)
 		@call args
 
 readList = (tokens, begin, end) ->
@@ -149,7 +140,7 @@ readEl = (tokens) ->
 		return new CList [new CSymbol "list"].concat els
 	else
 		if token is "nil"
-			return NIL
+			return null
 		else if isNumberString token
 			return new CNumber token
 		else
@@ -164,7 +155,10 @@ ns.read = (text) ->
 	return program
 
 ns.eval = (expression, env) ->
-	return expression.eval(env)
+	if expression?
+		return expression.eval(env)
+	else
+		return null
 
 binNumOp = ({identity, op}) ->
 	definition =
@@ -181,19 +175,25 @@ binNumOp = ({identity, op}) ->
 		definition[0] = -> new CNumber identity
 
 	new CFn definition
+
+isTruthy = (thing) ->
+	if not thing?
+		return false
+	else
+		return true
 	
 defaultEnvironment = ->
 	"if": new CSpecialForm
 		2: (env, [pred, ifTrue]) ->
-			@apply env, [pred, ifTrue, NIL]
+			@apply env, [pred, ifTrue, null]
 		3: (env, [pred, ifTrue, ifFalse]) ->
-			if pred.eval(env).isTruthy()
-				return ifTrue.eval(env)
+			if isTruthy ns.eval(pred, env)
+				return ns.eval(ifTrue, env)
 			else
-				return ifFalse.eval(env)
+				return ns.eval(ifFalse, env)
 	"def": new CSpecialForm
 		2: (env, [symbol, definition]) ->
-			definition = definition.eval(env)
+			definition = ns.eval(definition, env)
 			env[symbol.name] = definition
 			return definition
 	
@@ -207,7 +207,7 @@ defaultEnvironment = ->
 			definition[argCount] = (args) ->
 				for i in [0...argCount]
 					fnEnv[argNames[i]] = args[i]
-				return body.eval(fnEnv)
+				return ns.eval(body, fnEnv)
 
 			return new CFn definition
 
