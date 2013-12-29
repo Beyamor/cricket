@@ -212,6 +212,14 @@ defaultEnvironment = ->
 
 			return new CFn definition
 
+	"quote": new CSpecialForm
+		1: (env, [list]) ->
+			list
+
+	"eval": new CSpecialForm
+		1: (env, [expr]) ->
+			ns.eval(ns.eval(expr, env), env)
+
 	"cons":	new CFn
 			2: ([head, list]) ->
 				list.prepend head
