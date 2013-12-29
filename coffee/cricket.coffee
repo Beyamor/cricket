@@ -123,8 +123,7 @@ readEl = (tokens) ->
 	if token is "("
 		return new CList readList tokens, "(", ")"
 	if token is "["
-		els = readList tokens, "[", "]"
-		return new CList [new CSymbol "list"].concat els
+		return readList tokens, "[", "]"
 	else
 		if token is "nil"
 			return null
@@ -141,12 +140,14 @@ ns.read = (text) ->
 
 	return program
 
-ns.eval = (expression, env) ->
-	if expression?
-		if expression.eval?
-			expression.eval(env)
+ns.eval = (thing, env) ->
+	if thing?
+		if thing.eval?
+			thing.eval(env)
+		else if Array.isArray thing
+			(ns.eval el, env for el in thing)
 		else
-			expression
+			thing
 	else
 		return null
 
@@ -175,6 +176,13 @@ isTruthy = (thing) ->
 toString = (thing) ->
 	if not thing?
 		"nil"
+	else if Array.isArray(thing)
+		s = "["
+		for i in [0...thing.length]
+			s += toString(thing[i])
+			s += " " if i < thing.length - 1
+		s += "]"
+		return s
 	else
 		thing.toString()
 	
@@ -196,7 +204,7 @@ defaultEnvironment = ->
 	"fn": new CSpecialForm
 		2: (env, [argList, body]) ->
 			fnEnv		= Object.create(env)
-			argNames	= (symbol.name for symbol in argList.tail().elements)
+			argNames	= (symbol.name for symbol in argList)
 			argCount	= argNames.length
 
 			definition = {}
