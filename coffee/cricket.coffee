@@ -116,6 +116,10 @@ readEl = (tokens) ->
 	else
 		if token is "nil"
 			return null
+		else if token is "true"
+			return true
+		else if token is "false"
+			return false
 		else if isNumberString token
 			return Number token
 		else
@@ -165,7 +169,7 @@ binNumOp = ({identity, op}) ->
 	new CFn definition
 
 isTruthy = (thing) ->
-	if not thing?
+	if thing is false or thing is null
 		return false
 	else
 		return true
