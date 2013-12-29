@@ -51,8 +51,8 @@ class CNil extends CThing
 	toString: -> "nil"
 
 	isTruthy: -> false
+NIL = new CNil
 
-	@singleton: new CNil
 
 class CNumber extends CThing
 	constructor: (token) ->
@@ -149,7 +149,7 @@ readEl = (tokens) ->
 		return new CList [new CSymbol "list"].concat els
 	else
 		if token is "nil"
-			return CNil.singleton
+			return NIL
 		else if isNumberString token
 			return new CNumber token
 		else
@@ -185,7 +185,7 @@ binNumOp = ({identity, op}) ->
 defaultEnvironment = ->
 	"if": new CSpecialForm
 		2: (env, [pred, ifTrue]) ->
-			@apply pred, ifTrue, CNil.singleton
+			@apply pred, ifTrue, NIL
 		3: (env, [pred, ifTrue, ifFalse]) ->
 			if pred.eval(env).isTruthy()
 				return ifTrue.eval(env)
