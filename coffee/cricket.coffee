@@ -45,19 +45,6 @@ ns.tokenize = (text) ->
 class CThing
 	eval: -> this
 
-class CNumber extends CThing
-	constructor: (token) ->
-		@value = Number(token)
-
-	toString: ->
-		@value.toString()
-
-	@value: (x) ->
-		if x instanceof CNumber
-			return x.value
-		else
-			throw new Error "Can't coerce #{x.constructor.name} to CNumber"
-
 class CList extends CThing
 	constructor: (@elements) ->
 
@@ -142,7 +129,7 @@ readEl = (tokens) ->
 		if token is "nil"
 			return null
 		else if isNumberString token
-			return new CNumber token
+			return Number token
 		else
 			return new CSymbol token
 
@@ -156,7 +143,10 @@ ns.read = (text) ->
 
 ns.eval = (expression, env) ->
 	if expression?
-		return expression.eval(env)
+		if expression.eval?
+			expression.eval(env)
+		else
+			expression
 	else
 		return null
 
@@ -165,14 +155,14 @@ binNumOp = ({identity, op}) ->
 		1: ([x]) ->
 			x
 		2: ([x, y]) ->
-			return new CNumber(op(CNumber.value(x), CNumber.value(y)))
+			return op(x, y)
 		more: ([x, y, args...]) ->
 			z = @call [x, y]
 			args.unshift z
 			return @call args
 
 	if identity?
-		definition[0] = -> new CNumber identity
+		definition[0] = -> identity
 
 	new CFn definition
 
