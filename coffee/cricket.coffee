@@ -181,6 +181,12 @@ isTruthy = (thing) ->
 		return false
 	else
 		return true
+
+toString = (thing) ->
+	if not thing?
+		"nil"
+	else
+		thing.toString()
 	
 defaultEnvironment = ->
 	"if": new CSpecialForm
@@ -239,5 +245,5 @@ ns.run = (text) ->
 	env	= defaultEnvironment()
 
 	for el in ns.read text
-		s += (ns.eval el, env) + "\n"
+		s += toString(ns.eval el, env) + "\n"
 	return s
