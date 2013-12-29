@@ -193,7 +193,23 @@ defaultEnvironment = ->
 				return ifFalse.eval(env)
 	"def": new CSpecialForm
 		2: (env, [symbol, definition]) ->
-			env[symbol.name] = definition.eval(env)
+			definition = definition.eval(env)
+			env[symbol.name] = definition
+			return definition
+	
+	"fn": new CSpecialForm
+		2: (env, [argList, body]) ->
+			fnEnv		= Object.create(env)
+			argNames	= (symbol.name for symbol in argList.tail().elements)
+			argCount	= argNames.length
+
+			definition = {}
+			definition[argCount] = (args) ->
+				for i in [0...argCount]
+					fnEnv[argNames[i]] = args[i]
+				return body.eval(fnEnv)
+
+			return new CFn definition
 
 	"cons":	new CFn
 			2: ([head, list]) ->
