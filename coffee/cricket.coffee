@@ -191,6 +191,9 @@ defaultEnvironment = ->
 				return ifTrue.eval(env)
 			else
 				return ifFalse.eval(env)
+	"def": new CSpecialForm
+		2: (env, [symbol, definition]) ->
+			env[symbol.name] = definition.eval(env)
 
 	"cons":	new CFn
 			2: ([head, list]) ->
@@ -220,5 +223,5 @@ ns.run = (text) ->
 	env	= defaultEnvironment()
 
 	for el in ns.read text
-		s += ns.eval el, env
+		s += (ns.eval el, env) + "\n"
 	return s
