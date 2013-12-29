@@ -185,7 +185,7 @@ binNumOp = ({identity, op}) ->
 defaultEnvironment = ->
 	"if": new CSpecialForm
 		2: (env, [pred, ifTrue]) ->
-			@apply pred, ifTrue, NIL
+			@apply env, [pred, ifTrue, NIL]
 		3: (env, [pred, ifTrue, ifFalse]) ->
 			if pred.eval(env).isTruthy()
 				return ifTrue.eval(env)
