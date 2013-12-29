@@ -96,7 +96,6 @@ class CFn
 		result	= @call args
 
 		if @isMacro
-			console.log result
 			return ns.eval result, env
 		else
 			return result
@@ -207,60 +206,72 @@ toString = (thing) ->
 		thing.toString()
 	
 defaultEnvironment = ->
-	"if": new CSpecialForm
-		2: (env, [pred, ifTrue]) ->
-			@apply env, [pred, ifTrue, null]
-		3: (env, [pred, ifTrue, ifFalse]) ->
-			if isTruthy ns.eval(pred, env)
-				return ns.eval(ifTrue, env)
-			else
-				return ns.eval(ifFalse, env)
-	"def": new CSpecialForm
-		2: (env, [symbol, definition]) ->
-			definition = ns.eval(definition, env)
-			env[symbol.name] = definition
-			return definition
-	
-	"quote": new CSpecialForm
-		1: (env, [list]) ->
-			list
+	env =
+		"if": new CSpecialForm
+			2: (env, [pred, ifTrue]) ->
+				@apply env, [pred, ifTrue, null]
+			3: (env, [pred, ifTrue, ifFalse]) ->
+				if isTruthy ns.eval(pred, env)
+					return ns.eval(ifTrue, env)
+				else
+					return ns.eval(ifFalse, env)
+		"def": new CSpecialForm
+			2: (env, [symbol, definition]) ->
+				definition = ns.eval(definition, env)
+				env[symbol.name] = definition
+				return definition
+		
+		"quote": new CSpecialForm
+			1: (env, [list]) ->
+				list
 
-	"eval": new CSpecialForm
-		1: (env, [expr]) ->
-			ns.eval(ns.eval(expr, env), env)
+		"eval": new CSpecialForm
+			1: (env, [expr]) ->
+				ns.eval(ns.eval(expr, env), env)
 
-	"fn": new CSpecialForm
-		2: (env, [argList, body]) ->
-			return CFn.define env, argList, body
+		"fn": new CSpecialForm
+			2: (env, [argList, body]) ->
+				return CFn.define env, argList, body
 
-	"macro": new CSpecialForm
-		2: (env, [argList, body]) ->
-			fn = CFn.define env, argList, body
-			fn.isMacro = true
-			return fn
+		"macro": new CSpecialForm
+			2: (env, [argList, body]) ->
+				fn = CFn.define env, argList, body
+				fn.isMacro = true
+				return fn
 
-	"cons":	new CFn
-			2: ([head, list]) ->
-				list.prepend head
-	"head":	new CFn
-			1:	([clist]) ->
-					clist.head()
-	"tail":	new CFn
-			1:	([clist]) ->
-					clist.tail()
-	"list":	new CFn
-			more: (args) ->
-				new CList args
-	"+": binNumOp
-		op:		(x, y) -> x + y
-		identity:	0
-	"-": binNumOp
-		op:		(x, y) -> x - y
-	"*": binNumOp
-		op:		(x, y) -> x * y
-		identity:	1
-	"/": binNumOp
-		op:		(x, y) -> x / y
+		"cons":	new CFn
+				2: ([head, list]) ->
+					list.prepend head
+		"head":	new CFn
+				1:	([clist]) ->
+						clist.head()
+		"tail":	new CFn
+				1:	([clist]) ->
+						clist.tail()
+		"list":	new CFn
+				more: (args) ->
+					new CList args
+		"+": binNumOp
+			op:		(x, y) -> x + y
+			identity:	0
+		"-": binNumOp
+			op:		(x, y) -> x - y
+		"*": binNumOp
+			op:		(x, y) -> x * y
+			identity:	1
+		"/": binNumOp
+			op:		(x, y) -> x / y
+
+	lispDefinitions = [
+		"(def unless
+		  (macro [pred? if-false if-true]
+		    (list (quote if) pred? if-true if-false)))"
+	]
+
+	for definition in lispDefinitions
+		ns.eval ns.read(definition), env
+
+	return env
 
 ns.run = (text) ->
 	s	= ""
