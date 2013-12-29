@@ -42,16 +42,8 @@ ns.tokenize = (text) ->
 
 	return tokens
 
-class CThing
-	eval: -> this
-
-class CList extends CThing
+class CList
 	constructor: (@elements) ->
-
-	eval: (env) ->
-		return this if @elements.length is 0
-
-		@elements[0].eval(env).apply(env, @elements.slice(1))
 
 	head: ->
 		@elements[0]
@@ -71,16 +63,13 @@ class CList extends CThing
 		s += ")"
 		return s
 
-class CSymbol extends CThing
+class CSymbol
 	constructor: (@name) ->
-
-	eval: (env) ->
-		env[@name]
 
 	toString: ->
 		@name
 
-class CSpecialForm extends CThing
+class CSpecialForm
 	constructor: (@definition) ->
 
 	apply: (env, args) ->
@@ -91,7 +80,7 @@ class CSpecialForm extends CThing
 		else
 			throw new Error "No form definition for #{args.length} arguments"
 
-class CFn extends CThing
+class CFn
 	constructor: (@definition) ->
 
 	call: (args) ->
@@ -141,15 +130,16 @@ ns.read = (text) ->
 	return program
 
 ns.eval = (thing, env) ->
-	if thing?
-		if thing.eval?
-			thing.eval(env)
-		else if Array.isArray thing
-			(ns.eval el, env for el in thing)
-		else
-			thing
+	return null unless thing?
+
+	if thing instanceof CSymbol
+		env[thing.name]
+	else if thing instanceof CList
+		ns.eval(thing.elements[0], env).apply(env, thing.elements.slice(1))
+	else if Array.isArray thing
+		(ns.eval el, env for el in thing)
 	else
-		return null
+		thing
 
 binNumOp = ({identity, op}) ->
 	definition =
