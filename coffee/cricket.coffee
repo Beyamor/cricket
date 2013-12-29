@@ -129,11 +129,18 @@ ns.read = (text) ->
 
 	return program
 
+resolve = (symbol, env) ->
+	throw new Error "Can only resolve symbols" unless symbol instanceof CSymbol
+	if symbol.name of env
+		return env[symbol.name]
+	else
+		throw new Error "Can't resolve #{symbol.name}"
+
 ns.eval = (thing, env) ->
 	return null unless thing?
 
 	if thing instanceof CSymbol
-		env[thing.name]
+		resolve thing, env
 	else if thing instanceof CList
 		ns.eval(thing.elements[0], env).apply(env, thing.elements.slice(1))
 	else if Array.isArray thing
