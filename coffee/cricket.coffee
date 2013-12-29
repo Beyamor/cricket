@@ -3,7 +3,9 @@ if exports?
 else
 	ns = window.cricket = {}
 
-WHITESPACE_CHARS = [" ", "\n", "\r", "\t"]
+WHITESPACE_CHARS	= [" ", "\n", "\r", "\t"]
+BRACES			= ["(", ")", "[", "]"]
+
 isWhitespaceChar = (char) ->
 	WHITESPACE_CHARS.indexOf(char) isnt -1
 
@@ -30,10 +32,8 @@ ns.tokenize = (text) ->
 		# TODO Handle strings
 		if isWhitespaceChar char
 			addToken()
-		else if char is "("
-			push "("
-		else if char is ")"
-			push ")"
+		else if BRACES.indexOf(char) isnt -1
+			push char
 		else
 			token = if token? then token + char else char
 
@@ -113,7 +113,7 @@ readEl = (tokens) ->
 	token = tokens.shift()
 
 	if token is "("
-		list = []
+		els = []
 		while true
 			if tokens.length is 0
 				throw new Error "Unmatched ("
@@ -121,8 +121,19 @@ readEl = (tokens) ->
 				tokens.shift()
 				break
 			else
-				list.push readEl(tokens)
-		return new CList list
+				els.push readEl(tokens)
+		return new CList els
+	if token is "["
+		els = [new CSymbol "list"]
+		while true
+			if tokens.length is 0
+				throw new Error "Unmatched ["
+			else if tokens[0] is "]"
+				tokens.shift()
+				break
+			else
+				els.push readEl(tokens)
+		return new CList els
 	else
 		if isNumberString token
 			return new CNumber token
