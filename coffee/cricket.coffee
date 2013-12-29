@@ -42,12 +42,21 @@ ns.tokenize = (text) ->
 
 	return tokens
 
-class CNumber
+class CThing
+	eval: -> this
+
+	isTruthy: -> true
+
+class CNil extends CThing
+	toString: -> "nil"
+
+	isTruthy: -> false
+
+	@singleton: new CNil
+
+class CNumber extends CThing
 	constructor: (token) ->
 		@value = Number(token)
-
-	eval: ->
-		this
 
 	toString: ->
 		@value.toString()
@@ -58,7 +67,7 @@ class CNumber
 		else
 			throw new Error "Can't coerce #{x.constructor.name} to CNumber"
 
-class CList
+class CList extends CThing
 	constructor: (@elements) ->
 
 	eval: (env) ->
@@ -84,7 +93,7 @@ class CList
 		s += ")"
 		return s
 
-class CSymbol
+class CSymbol extends CThing
 	constructor: (@name) ->
 
 	eval: (env) ->
@@ -93,7 +102,18 @@ class CSymbol
 	toString: ->
 		@name
 
-class CFn
+class CSpecialForm extends CThing
+	constructor: (@definition) ->
+
+	apply: (env, args) ->
+		if @definition[args.length]?
+			@definition[args.length].call(this, env, args)
+		else if @definition.more?
+			@definition.more.call(this, env, args)
+		else
+			throw new Error "No form definition for #{args.length} arguments"
+
+class CFn extends CThing
 	constructor: (@definition) ->
 
 	call: (args) ->
@@ -104,38 +124,33 @@ class CFn
 		else
 			throw new Error "No function definition for #{args.length} arguments"
 
-
 	apply: (env, args) ->
 		args = (arg.eval(env) for arg in args)
 		@call args
+
+readList = (tokens, begin, end) ->
+	els = []
+	while true
+		if tokens.length is 0
+			throw new Error "Unmatched #{begin}"
+		else if tokens[0] is end
+			tokens.shift()
+			return els
+		else
+			els.push readEl tokens
 		
 readEl = (tokens) ->
 	token = tokens.shift()
 
 	if token is "("
-		els = []
-		while true
-			if tokens.length is 0
-				throw new Error "Unmatched ("
-			else if tokens[0] is ")"
-				tokens.shift()
-				break
-			else
-				els.push readEl(tokens)
-		return new CList els
+		return new CList readList tokens, "(", ")"
 	if token is "["
-		els = [new CSymbol "list"]
-		while true
-			if tokens.length is 0
-				throw new Error "Unmatched ["
-			else if tokens[0] is "]"
-				tokens.shift()
-				break
-			else
-				els.push readEl(tokens)
-		return new CList els
+		els = readList tokens, "[", "]"
+		return new CList [new CSymbol "list"].concat els
 	else
-		if isNumberString token
+		if token is "nil"
+			return CNil.singleton
+		else if isNumberString token
 			return new CNumber token
 		else
 			return new CSymbol token
@@ -168,6 +183,15 @@ binNumOp = ({identity, op}) ->
 	new CFn definition
 	
 defaultEnvironment = ->
+	"if": new CSpecialForm
+		2: (env, [pred, ifTrue]) ->
+			@apply pred, ifTrue, CNil.singleton
+		3: (env, [pred, ifTrue, ifFalse]) ->
+			if pred.eval(env).isTruthy()
+				return ifTrue.eval(env)
+			else
+				return ifFalse.eval(env)
+
 	"cons":	new CFn
 			2: ([head, list]) ->
 				list.prepend head
