@@ -192,13 +192,19 @@ ns.cons = (head, thing) ->
 	else
 		[head].concat(thing)
 
+ns.isArray = Array.isArray
+
+ns.isList = (thing) -> thing instanceof List
+
+ns.isNil = (thing) -> not thing?
+
 ns.eval = (thing, env) ->
 	return null unless thing?
 
 	if thing instanceof Symbol
 		return resolve thing, env
 
-	else if thing instanceof List
+	else if ns.isList thing
 		head	= ns.eval(thing.elements[0], env)
 		args	= ns.tail(thing).elements
 		
@@ -211,7 +217,7 @@ ns.eval = (thing, env) ->
 			result = ns.eval result, env
 		return result
 
-	else if Array.isArray thing
+	else if ns.isArray thing
 		return (ns.eval el, env for el in thing)
 
 	else
@@ -240,9 +246,9 @@ isTruthy = (thing) ->
 		return true
 
 ns.stringify = (thing) ->
-	if not thing?
+	if ns.isNil thing
 		"nil"
-	else if Array.isArray(thing)
+	else if ns.isArray thing
 		s = "["
 		for i in [0...thing.length]
 			s += ns.stringify(thing[i])
@@ -340,6 +346,18 @@ prelude = ->
 				for arg in args
 					s += ns.stringify arg
 				return s
+
+		"list?": new Fn
+			1: ([thing]) ->
+				ns.isList thing
+
+		"array?": new Fn
+			1: ([thing]) ->
+				ns.isArray thing
+
+		"nil?": new Fn
+			1: ([thing]) ->
+				ns.isNil thing
 
 	lispDefinitions = [
 		"(def defmacro
