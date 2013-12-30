@@ -227,6 +227,8 @@ toString = (thing) ->
 			s += " " if i < thing.length - 1
 		s += "]"
 		return s
+	else if thing? and thing.constructor is String
+		return "\"#{thing}\""
 	else
 		thing.toString()
 	
@@ -300,6 +302,13 @@ defaultEnvironment = ->
 					s += toString(args[i])
 					s += " " if i < args.length - 1
 				console.log s
+
+		"str": new CFn
+			more: (args) ->
+				s = ""
+				for arg in args
+					s += toString arg
+				return s
 
 	lispDefinitions = [
 		"(def defmacro
