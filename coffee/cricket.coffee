@@ -132,7 +132,6 @@ class Fn
 			}
 
 	@define: (env, arities) ->
-
 		definition = {}
 		for {arity, argList, body} in arities
 			do (arity, argList, body) ->
@@ -295,7 +294,27 @@ ns.stringify = (thing) ->
 		return "\"#{thing}\""
 	else
 		thing.toString()
-	
+
+interpretFnDefintions = (env, definitions) ->
+	arities = []
+
+	# A single arity
+	# (fn [x] x)
+	if ns.isArray definitions[0]
+		[argList, body] = definitions
+		arities.push Fn.parseArityDefintion argList, body
+
+	# Multiple arities
+	# (fn 
+	#   ([x] x)
+	#   ([x y] (+ x y)))
+	else
+		for definition in definitions
+			[argList, body] = definition.elements
+			arities.push Fn.parseArityDefintion argList, body
+
+	return Fn.define env, arities
+
 prelude = ->
 	env =
 		"if": new SpecialForm
@@ -322,33 +341,13 @@ prelude = ->
 
 		"fn": new SpecialForm
 			more: (env, definitions) ->
-				arities = []
-				# A single arity
-				# (fn [x] x)
-				if ns.isArray definitions[0]
-					[argList, body] = definitions
-					arities.push Fn.parseArityDefintion argList, body
-
-				# Multiple arities
-				# (fn 
-				#   ([x] x)
-				#   ([x y] (+ x y)))
-				else
-					for definition in definitions
-						[argList, body] = definition.elements
-						arities.push Fn.parseArityDefintion argList, body
-
-				return Fn.define env, arities
+				return interpretFnDefintions env, definitions
 
 		"macro": new SpecialForm
-			2: (env, [argList, body]) ->
-				fn = Fn.define env, [{
-					arity:		argList.length
-					argList:	argList
-					body:		body
-				}]
-
+			more: (env, definitions) ->
+				fn = interpretFnDefintions env, definitions
 				fn.isMacro = true
+
 				return fn
 
 		"do": new SpecialForm
