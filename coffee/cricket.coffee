@@ -251,6 +251,12 @@ defaultEnvironment = ->
 				fn.isMacro = true
 				return fn
 
+		"do": new CSpecialForm
+			more: (env, exprs) ->
+				for i in [0...exprs.length]
+					result = ns.eval(exprs[i], env)
+				return result
+
 		"cons":	new CFn
 				2: ([head, list]) ->
 					list.prepend head
