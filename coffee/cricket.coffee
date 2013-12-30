@@ -232,7 +232,7 @@ toString = (thing) ->
 	else
 		thing.toString()
 	
-defaultEnvironment = ->
+prelude = ->
 	env =
 		"if": new SpecialForm
 			2: (env, [pred, ifTrue]) ->
@@ -341,6 +341,6 @@ defaultEnvironment = ->
 
 ns.run = (text) ->
 	s	= ""
-	env	= defaultEnvironment()
+	env	= prelude()
 
 	return toString(ns.eval(ns.readProgram(text), env))
