@@ -101,6 +101,29 @@ class Fn
 	apply: (env, args) ->
 		return @call args
 
+	@parseArityDefintion: (argList, body) ->
+		isMore		= false
+		ampersand	= null
+		for arg in argList
+			if arg.name is "&"
+				isMore		= true
+				ampersand	= arg
+
+		if isMore
+			argList.splice(argList.indexOf(ampersand), 1)
+			return {
+				arity:		"more"
+				argList:	argList
+				body:		body
+			}
+
+		else
+			return {
+				arity:		argList.length
+				argList:	argList
+				body:		body
+			}
+
 	@define: (env, arities) ->
 
 		definition = {}
@@ -116,15 +139,12 @@ class Fn
 							fnEnv[argNames[i]] = args[i]
 						return ns.eval(body, fnEnv)
 
-					# no nice way of testing this right now
-					#else
-					#	lastIndex = argCount-1
-					#	for i in [0...lastIndex]
-					#		fnEnv[argNames[i]] = args[i]
-					#	fnEnv[argNames[lastIndex]] = args.slice(lastIndex)
-					#	return ns.eval(body, fnEnv)
-
-					else throw new Error "Can't support variadic functions"
+					else
+						lastIndex = argCount-1
+						for i in [0...lastIndex]
+							fnEnv[argNames[i]] = args[i]
+						fnEnv[argNames[lastIndex]] = args.slice(lastIndex)
+						return ns.eval(body, fnEnv)
 		return new Fn definition
 
 readList = (tokens, begin, end) ->
@@ -297,11 +317,7 @@ prelude = ->
 				# (fn [x] x)
 				if ns.isArray definitions[0]
 					[argList, body] = definitions
-					arities.push {
-						arity:		argList.length
-						argList:	argList
-						body:		body
-					}
+					arities.push Fn.parseArityDefintion argList, body
 
 				# Multiple arities
 				# (fn 
@@ -309,30 +325,8 @@ prelude = ->
 				#   ([x y] (+ x y)))
 				else
 					for definition in definitions
-						do (definition) ->
-							[argList, body] = definition.elements
-
-							isMore		= false
-							ampersand	= null
-							for arg in argList
-								if arg.name is "&"
-									isMore		= true
-									ampersand	= arg
-
-							if isMore
-								argList.splice(argList.indexOf(ampersand), 1)
-								arities.push {
-									arity:		"more"
-									argList:	argList
-									body:		body
-								}
-
-							else
-								arities.push {
-									arity:		argList.length
-									argList:	argList
-									body:		body
-								}
+						[argList, body] = definition.elements
+						arities.push Fn.parseArityDefintion argList, body
 
 				return Fn.define env, arities
 
