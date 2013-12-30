@@ -274,6 +274,14 @@ defaultEnvironment = ->
 		"/": binNumOp
 			op:		(x, y) -> x / y
 
+		"println": new CFn
+			more: (args) ->
+				s = ""
+				for i in [0...args.length]
+					s += toString(args[i])
+					s += " " if i < args.length - 1
+				console.log s
+
 	lispDefinitions = [
 		"(def defmacro
 		   (macro [name arg-list body]
