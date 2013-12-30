@@ -58,17 +58,17 @@ ns.tokenize = (text) ->
 
 	return tokens
 
-class CList
+class List
 	constructor: (@elements) ->
 
 	head: ->
 		@elements[0]
 
 	tail: ->
-		new CList @elements.slice(1)
+		new List @elements.slice(1)
 
 	prepend: (head) ->
-		new CList [head].concat(@elements)
+		new List [head].concat(@elements)
 
 	toString: ->
 		s = "("
@@ -79,13 +79,13 @@ class CList
 		s += ")"
 		return s
 
-class CSymbol
+class Symbol
 	constructor: (@name) ->
 
 	toString: ->
 		@name
 
-class CSpecialForm
+class SpecialForm
 	constructor: (@definition) ->
 
 	apply: (env, args) ->
@@ -96,7 +96,7 @@ class CSpecialForm
 		else
 			throw new Error "No form definition for #{args.length} arguments"
 
-class CFn
+class Fn
 	constructor: (@definition) ->
 
 	call: (args) ->
@@ -121,7 +121,7 @@ class CFn
 				fnEnv[argNames[i]] = args[i]
 			return ns.eval(body, fnEnv)
 
-		return new CFn definition
+		return new Fn definition
 
 readList = (tokens, begin, end) ->
 	els = []
@@ -138,7 +138,7 @@ readEl = (tokens) ->
 	token = tokens.shift()
 
 	if token is "("
-		return new CList readList tokens, "(", ")"
+		return new List readList tokens, "(", ")"
 	if token is "["
 		return readList tokens, "[", "]"
 	else if token is "nil"
@@ -154,7 +154,7 @@ readEl = (tokens) ->
 	else if token[0] is "\""
 		return token.substring(1, token.length - 1)
 	else
-		return new CSymbol token
+		return new Symbol token
 
 ns.read = (text) ->
 	readEl ns.tokenize text
@@ -164,7 +164,7 @@ ns.readProgram = (text) ->
 
 
 resolve = (symbol, env) ->
-	throw new Error "Can only resolve symbols" unless symbol instanceof CSymbol
+	throw new Error "Can only resolve symbols" unless symbol instanceof Symbol
 	if symbol.name of env
 		return env[symbol.name]
 	else
@@ -173,19 +173,19 @@ resolve = (symbol, env) ->
 ns.eval = (thing, env) ->
 	return null unless thing?
 
-	if thing instanceof CSymbol
+	if thing instanceof Symbol
 		return resolve thing, env
 
-	else if thing instanceof CList
+	else if thing instanceof List
 		head	= ns.eval(thing.elements[0], env)
 		args	= thing.elements.slice(1)
 		
-		if head instanceof CFn and not head.isMacro
+		if head instanceof Fn and not head.isMacro
 			args = (ns.eval(arg, env) for arg in args)
 
 		result = head.apply(env, args)
 
-		if head instanceof CFn and head.isMacro
+		if head instanceof Fn and head.isMacro
 			result = ns.eval result, env
 		return result
 
@@ -209,7 +209,7 @@ binNumOp = ({identity, op}) ->
 	if identity?
 		definition[0] = -> identity
 
-	new CFn definition
+	new Fn definition
 
 isTruthy = (thing) ->
 	if thing is false or thing is null
@@ -234,7 +234,7 @@ toString = (thing) ->
 	
 defaultEnvironment = ->
 	env =
-		"if": new CSpecialForm
+		"if": new SpecialForm
 			2: (env, [pred, ifTrue]) ->
 				@apply env, [pred, ifTrue, null]
 			3: (env, [pred, ifTrue, ifFalse]) ->
@@ -242,48 +242,48 @@ defaultEnvironment = ->
 					return ns.eval(ifTrue, env)
 				else
 					return ns.eval(ifFalse, env)
-		"def": new CSpecialForm
+		"def": new SpecialForm
 			2: (env, [symbol, definition]) ->
 				definition = ns.eval(definition, env)
 				env[symbol.name] = definition
 				return definition
 		
-		"quote": new CSpecialForm
+		"quote": new SpecialForm
 			1: (env, [list]) ->
 				list
 
-		"eval": new CSpecialForm
+		"eval": new SpecialForm
 			1: (env, [expr]) ->
 				ns.eval(ns.eval(expr, env), env)
 
-		"fn": new CSpecialForm
+		"fn": new SpecialForm
 			2: (env, [argList, body]) ->
-				return CFn.define env, argList, body
+				return Fn.define env, argList, body
 
-		"macro": new CSpecialForm
+		"macro": new SpecialForm
 			2: (env, [argList, body]) ->
-				fn = CFn.define env, argList, body
+				fn = Fn.define env, argList, body
 				fn.isMacro = true
 				return fn
 
-		"do": new CSpecialForm
+		"do": new SpecialForm
 			more: (env, exprs) ->
 				for i in [0...exprs.length]
 					result = ns.eval(exprs[i], env)
 				return result
 
-		"cons":	new CFn
+		"cons":	new Fn
 				2: ([head, list]) ->
 					list.prepend head
-		"head":	new CFn
+		"head":	new Fn
 				1:	([clist]) ->
 						clist.head()
-		"tail":	new CFn
+		"tail":	new Fn
 				1:	([clist]) ->
 						clist.tail()
-		"list":	new CFn
+		"list":	new Fn
 				more: (args) ->
-					new CList args
+					new List args
 		"+": binNumOp
 			op:		(x, y) -> x + y
 			identity:	0
@@ -295,7 +295,7 @@ defaultEnvironment = ->
 		"/": binNumOp
 			op:		(x, y) -> x / y
 
-		"println": new CFn
+		"println": new Fn
 			more: (args) ->
 				s = ""
 				for i in [0...args.length]
@@ -303,7 +303,7 @@ defaultEnvironment = ->
 					s += " " if i < args.length - 1
 				console.log s
 
-		"str": new CFn
+		"str": new Fn
 			more: (args) ->
 				s = ""
 				for arg in args
