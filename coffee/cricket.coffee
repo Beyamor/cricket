@@ -268,9 +268,27 @@ defaultEnvironment = ->
 			op:		(x, y) -> x / y
 
 	lispDefinitions = [
-		"(def unless
-		  (macro [pred? if-false if-true]
-		    (list 'if pred? if-true if-false)))"
+		"(def defmacro
+		   (macro [name arg-list body]
+		     (list 'def name
+		       (list 'macro arg-list body))))"
+
+		"(defmacro defn
+		    [name arg-list body]
+		    (list 'def name
+		      (list 'fn arg-list body)))"
+
+		"(defn inc
+		   [x]
+		   (+ x 1))"
+
+		"(defn dec
+		   [x]
+		   (- x 1))"
+
+		"(defmacro unless
+		   [pred? if-false if-true]
+		   (list 'if pred? if-true if-false))"
 	]
 
 	for definition in lispDefinitions
