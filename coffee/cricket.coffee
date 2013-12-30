@@ -110,17 +110,30 @@ class Fn
 	apply: (env, args) ->
 		return @call args
 
-	@define: (env, argList, body) ->
-		fnEnv		= Object.create(env)
-		argNames	= (symbol.name for symbol in argList)
-		argCount	= argNames.length
+	@define: (env, arities) ->
 
 		definition = {}
-		definition[argCount] = (args) ->
-			for i in [0...argCount]
-				fnEnv[argNames[i]] = args[i]
-			return ns.eval(body, fnEnv)
+		for {arity, argList, body} in arities
+			do ->
+				definition[arity] = (args) ->
+					fnEnv		= Object.create(env)
+					argNames	= (symbol.name for symbol in argList)
+					argCount	= argNames.length
 
+					if arity isnt "more"
+						for i in [0...argCount]
+							fnEnv[argNames[i]] = args[i]
+						return ns.eval(body, fnEnv)
+
+					# no nice way of testing this right now
+					#else
+					#	lastIndex = argCount-1
+					#	for i in [0...lastIndex]
+					#		fnEnv[argNames[i]] = args[i]
+					#	fnEnv[argNames[lastIndex]] = args.slice(lastIndex)
+					#	return ns.eval(body, fnEnv)
+
+					else throw new Error "Can't support variadic functions"
 		return new Fn definition
 
 readList = (tokens, begin, end) ->
@@ -258,11 +271,20 @@ prelude = ->
 
 		"fn": new SpecialForm
 			2: (env, [argList, body]) ->
-				return Fn.define env, argList, body
+				return Fn.define env, [{
+					arity:		argList.length
+					argList:	argList
+					body:		body
+				}]
 
 		"macro": new SpecialForm
 			2: (env, [argList, body]) ->
-				fn = Fn.define env, argList, body
+				fn = Fn.define env, [{
+					arity:		argList.length
+					argList:	argList
+					body:		body
+				}]
+
 				fn.isMacro = true
 				return fn
 
