@@ -355,6 +355,32 @@ prelude = ->
 					result = ns.eval(exprs[i], env)
 				return result
 
+		"new": new SpecialForm
+			more: (env, [constructor, args...]) ->
+				constructor	= ns.eval(constructor, env)
+				args		= (ns.eval(arg, env) for arg in args)
+
+				# Native constructors like Date are a little oogly
+				# and apply doesn't work, so I'm just gunna quickly
+				# hardcode the first couple cases. 
+				switch args.length
+					when 0
+						return new constructor
+					when 1
+						[arg1] = args
+						return new constructor arg1
+					when 2
+						[arg1, arg2] = args
+						return new constructor arg1, arg2
+					when 3
+						[arg1, arg2, arg3] = args
+						return new constructor arg1, arg2, arg3
+					else
+						# Otherwise, http://stackoverflow.com/a/1608546/1308287
+						F = -> constructor.apply(this, args)
+						F.prototype = constructor.prototype
+						return new F
+
 		"cons":	new Fn
 				2: ([head, list]) ->
 					ns.cons head, list
