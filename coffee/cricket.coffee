@@ -73,7 +73,7 @@ class List
 	toString: ->
 		s = "("
 		for i in [0...@elements.length]
-			s += @elements[i].toString()
+			s += ns.stringify @elements[i]
 			if i < @elements.length - 1
 				s += " "
 		s += ")"
@@ -217,13 +217,13 @@ isTruthy = (thing) ->
 	else
 		return true
 
-toString = (thing) ->
+ns.stringify = (thing) ->
 	if not thing?
 		"nil"
 	else if Array.isArray(thing)
 		s = "["
 		for i in [0...thing.length]
-			s += toString(thing[i])
+			s += ns.stringify(thing[i])
 			s += " " if i < thing.length - 1
 		s += "]"
 		return s
@@ -299,7 +299,7 @@ prelude = ->
 			more: (args) ->
 				s = ""
 				for i in [0...args.length]
-					s += toString(args[i])
+					s += ns.stringify(args[i])
 					s += " " if i < args.length - 1
 				console.log s
 
@@ -307,7 +307,7 @@ prelude = ->
 			more: (args) ->
 				s = ""
 				for arg in args
-					s += toString arg
+					s += ns.stringify arg
 				return s
 
 	lispDefinitions = [
@@ -343,4 +343,4 @@ ns.run = (text) ->
 	s	= ""
 	env	= prelude()
 
-	return toString(ns.eval(ns.readProgram(text), env))
+	return ns.stringify(ns.eval(ns.readProgram(text), env))
