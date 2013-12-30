@@ -105,7 +105,7 @@ class Fn
 
 		definition = {}
 		for {arity, argList, body} in arities
-			do ->
+			do (arity, argList, body) ->
 				definition[arity] = (args) ->
 					fnEnv		= Object.create(env)
 					argNames	= (symbol.name for symbol in argList)
@@ -291,23 +291,50 @@ prelude = ->
 				ns.eval(ns.eval(expr, env), env)
 
 		"fn": new SpecialForm
-			more: (env, arities) ->
+			more: (env, definitions) ->
+				arities = []
 				# A single arity
 				# (fn [x] x)
-				if ns.isArray arities[0]
-					[argList, body] = arities
-					return Fn.define env, [{
+				if ns.isArray definitions[0]
+					[argList, body] = definitions
+					arities.push {
 						arity:		argList.length
 						argList:	argList
 						body:		body
-					}]
+					}
 
 				# Multiple arities
 				# (fn 
 				#   ([x] x)
 				#   ([x y] (+ x y)))
 				else
-					throw new Error "Multiple arities not supported"
+					for definition in definitions
+						do (definition) ->
+							[argList, body] = definition.elements
+
+							isMore		= false
+							ampersand	= null
+							for arg in argList
+								if arg.name is "&"
+									isMore		= true
+									ampersand	= arg
+
+							if isMore
+								argList.splice(argList.indexOf(ampersand), 1)
+								arities.push {
+									arity:		"more"
+									argList:	argList
+									body:		body
+								}
+
+							else
+								arities.push {
+									arity:		argList.length
+									argList:	argList
+									body:		body
+								}
+
+				return Fn.define env, arities
 
 		"macro": new SpecialForm
 			2: (env, [argList, body]) ->

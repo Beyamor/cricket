@@ -7,5 +7,6 @@ $ ->
 				cricket.run input
 			catch e
 				e
+				throw e
 
 		$("#output").text output
