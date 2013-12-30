@@ -61,15 +61,6 @@ ns.tokenize = (text) ->
 class List
 	constructor: (@elements) ->
 
-	head: ->
-		@elements[0]
-
-	tail: ->
-		new List @elements.slice(1)
-
-	prepend: (head) ->
-		new List [head].concat(@elements)
-
 	toString: ->
 		s = "("
 		for i in [0...@elements.length]
@@ -183,6 +174,24 @@ resolve = (symbol, env) ->
 	else
 		throw new Error "Can't resolve #{symbol.name}"
 
+ns.head = (thing) ->
+	if thing instanceof List
+		thing.elements[0]
+	else
+		thing[0]
+
+ns.tail = (thing) ->
+	if thing instanceof List
+		new List thing.elements.slice(1)
+	else
+		thing.slice(1)
+
+ns.cons = (head, thing) ->
+	if thing instanceof List
+		new List [head].concat(thing.elements)
+	else
+		[head].concat(thing)
+
 ns.eval = (thing, env) ->
 	return null unless thing?
 
@@ -191,7 +200,7 @@ ns.eval = (thing, env) ->
 
 	else if thing instanceof List
 		head	= ns.eval(thing.elements[0], env)
-		args	= thing.elements.slice(1)
+		args	= ns.tail(thing).elements
 		
 		if head instanceof Fn and not head.isMacro
 			args = (ns.eval(arg, env) for arg in args)
@@ -296,13 +305,13 @@ prelude = ->
 
 		"cons":	new Fn
 				2: ([head, list]) ->
-					list.prepend head
+					ns.cons head, list
 		"head":	new Fn
-				1:	([clist]) ->
-						clist.head()
+				1: ([thing]) ->
+					ns.head thing
 		"tail":	new Fn
-				1:	([clist]) ->
-						clist.tail()
+				1: ([thing]) ->
+					ns.tail thing
 		"list":	new Fn
 				more: (args) ->
 					new List args
