@@ -142,12 +142,7 @@ ns.read = (text) ->
 	readEl ns.tokenize text
 
 ns.readProgram = (text) ->
-	tokens	= ns.tokenize text
-	program	= []
-	while tokens.length isnt 0
-		program.push readEl tokens
-
-	return program
+	ns.read "(do #{text})"
 
 
 resolve = (symbol, env) ->
@@ -321,6 +316,4 @@ ns.run = (text) ->
 	s	= ""
 	env	= defaultEnvironment()
 
-	for el in ns.readProgram text
-		s += toString(ns.eval el, env) + "\n"
-	return s
+	return toString(ns.eval(ns.readProgram(text), env))
