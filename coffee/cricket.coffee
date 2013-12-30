@@ -285,12 +285,23 @@ prelude = ->
 				ns.eval(ns.eval(expr, env), env)
 
 		"fn": new SpecialForm
-			2: (env, [argList, body]) ->
-				return Fn.define env, [{
-					arity:		argList.length
-					argList:	argList
-					body:		body
-				}]
+			more: (env, arities) ->
+				# A single arity
+				# (fn [x] x)
+				if ns.isArray arities[0]
+					[argList, body] = arities
+					return Fn.define env, [{
+						arity:		argList.length
+						argList:	argList
+						body:		body
+					}]
+
+				# Multiple arities
+				# (fn 
+				#   ([x] x)
+				#   ([x y] (+ x y)))
+				else
+					throw new Error "Multiple arities not supported"
 
 		"macro": new SpecialForm
 			2: (env, [argList, body]) ->
