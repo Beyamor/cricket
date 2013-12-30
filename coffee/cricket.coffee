@@ -39,6 +39,8 @@ ns.tokenize = (text) ->
 			addToken()
 		else if BRACES.indexOf(char) isnt -1
 			push char
+		else if char is "'"
+			push char
 		else if char is "\""
 			addToken()
 			token = char
@@ -178,8 +180,8 @@ readEl = (tokens) ->
 		return false
 	else if isNumberString token
 		return Number token
-	else if token[0] is "'"
-		return ns.read "(quote #{token.substr(1)})"
+	else if token is "'"
+		return new List [new Symbol("quote"), readEl(tokens)]
 	else if token[0] is "\""
 		return token.substring(1, token.length - 1)
 	else
