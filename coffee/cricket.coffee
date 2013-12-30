@@ -13,8 +13,14 @@ isNumberString = (n) ->
 	!isNaN(parseFloat(n)) and isFinite(n)
 
 ns.tokenize = (text) ->
-	tokens	= []
-	token	= null
+	tokens		= []
+	token		= null
+	char		= null
+
+	readChar = ->
+		c = text[0]
+		text = text.substring(1)
+		return c
 
 	addToken = ->
 		if token?
@@ -27,17 +33,27 @@ ns.tokenize = (text) ->
 		addToken()
 
 	while text.length isnt 0
-		char	= text[0]
+		char = readChar()
 
-		# TODO Handle strings
 		if isWhitespaceChar char
 			addToken()
 		else if BRACES.indexOf(char) isnt -1
 			push char
+		else if char is "\""
+			addToken()
+			token = char
+
+			while true
+				throw new Error "Mismatched \"" if text.length is 0
+
+				char = readChar()
+				token += char
+
+				if char is "\""
+					break
 		else
 			token = if token? then token + char else char
 
-		text = text.substring(1)
 	addToken()
 
 	return tokens
@@ -135,6 +151,8 @@ readEl = (tokens) ->
 		return Number token
 	else if token[0] is "'"
 		return ns.read "(quote #{token.substr(1)})"
+	else if token[0] is "\""
+		return token.substring(1, token.length - 1)
 	else
 		return new CSymbol token
 
