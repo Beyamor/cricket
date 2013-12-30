@@ -72,6 +72,11 @@ class List
 
 class Symbol
 	constructor: (@name) ->
+		@isQualified = @name.indexOf("/") isnt -1
+
+		if @isQualified
+			@namespace		= @name.substring(0, @name.indexOf("/"))
+			@unqualifiedName	= @name.substring(@namespace.length + 1)
 
 	toString: ->
 		@name
@@ -189,6 +194,9 @@ ns.readProgram = (text) ->
 
 resolve = (symbol, env) ->
 	throw new Error "Can only resolve symbols" unless symbol instanceof Symbol
+
+	if symbol.namespace is "js"
+		return eval(symbol.unqualifiedName)
 	if symbol.name of env
 		return env[symbol.name]
 	else
