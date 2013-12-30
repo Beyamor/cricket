@@ -198,6 +198,12 @@ ns.isList = (thing) -> thing instanceof List
 
 ns.isNil = (thing) -> not thing?
 
+ns.isEmpty = (thing) ->
+	if ns.isList thing
+		return thing.elements.length is 0
+	else
+		return thing.length is 0
+
 ns.eval = (thing, env) ->
 	return null unless thing?
 
@@ -370,6 +376,10 @@ prelude = ->
 			1: ([thing]) ->
 				ns.isNil thing
 
+		"empty?": new Fn
+			1: ([thing]) ->
+				ns.isEmpty thing
+
 	lispDefinitions = [
 		"(def defmacro
 		   (macro [name arg-list body]
@@ -392,6 +402,13 @@ prelude = ->
 		"(defmacro unless
 		   [pred? if-false if-true]
 		   (list 'if pred? if-true if-false))"
+
+		"(defn map
+		   [f s]
+		   (if (empty? s)
+		     s
+		     (cons (f (head s))
+		           (map f (tail s)))))"
 	]
 
 	for definition in lispDefinitions
