@@ -92,13 +92,7 @@ class CFn
 			throw new Error "No function definition for #{args.length} arguments"
 
 	apply: (env, args) ->
-		args	= (ns.eval(arg, env) for arg in args) unless @isMacro
-		result	= @call args
-
-		if @isMacro
-			return ns.eval result, env
-		else
-			return result
+		return @call args
 
 	@define: (env, argList, body) ->
 		fnEnv		= Object.create(env)
@@ -167,13 +161,26 @@ ns.eval = (thing, env) ->
 	return null unless thing?
 
 	if thing instanceof CSymbol
-		resolve thing, env
+		return resolve thing, env
+
 	else if thing instanceof CList
-		ns.eval(thing.elements[0], env).apply(env, thing.elements.slice(1))
+		head	= ns.eval(thing.elements[0], env)
+		args	= thing.elements.slice(1)
+		
+		if head instanceof CFn and not head.isMacro
+			args = (ns.eval(arg, env) for arg in args)
+
+		result = head.apply(env, args)
+
+		if head instanceof CFn and head.isMacro
+			result = ns.eval result, env
+		return result
+
 	else if Array.isArray thing
-		(ns.eval el, env for el in thing)
+		return (ns.eval el, env for el in thing)
+
 	else
-		thing
+		return thing
 
 binNumOp = ({identity, op}) ->
 	definition =
