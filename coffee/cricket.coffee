@@ -511,6 +511,15 @@ prelude = ->
 		             (f (head s))
 			     (tail s))))"
 
+		"(defn filter
+		   [p? s]
+		   (if (empty? s)
+		     s
+		     (if (p? (head s))
+		       (cons (head s)
+		             (filter p? (tail s)))
+		       (filter p? (tail s)))))"
+
 		"(defmacro or
 		   [& terms]
 		   (if (empty? terms)
