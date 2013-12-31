@@ -213,7 +213,7 @@ ns.tail = (thing) ->
 	if thing instanceof List
 		new List thing.elements.slice(1)
 	else
-		thing.slice(1)
+		new List thing.slice(1)
 
 ns.cons = (head, thing) ->
 	if thing instanceof List
