@@ -436,6 +436,39 @@ prelude = ->
 			1: ([thing]) ->
 				ns.isEmpty thing
 
+		"=": new Fn
+			2: ([x, y]) -> x is y
+
+		">": new Fn
+			2: ([x, y]) -> x > y
+
+		"<": new Fn
+			2: ([x, y]) -> x < y
+
+		">=": new Fn
+			2: ([x, y]) -> x >= y
+
+		"<=": new Fn
+			2: ([x, y]) -> x <= y
+
+		"even?": new Fn
+			1: ([x]) -> x % 2 is 0
+
+		"odd?": new Fn
+			1: ([x]) -> x % 2 isnt 0
+
+		"zero?": new Fn
+			1: ([x]) -> x is 0
+
+		"pos?": new Fn
+			1: ([x]) -> x > 0
+
+		"neg?": new Fn
+			1: ([x]) -> x < 0
+
+		"identity": new Fn
+			1: ([x]) -> x
+
 	lispDefinitions = [
 		"(def defmacro
 		   (macro [name arg-list body]
