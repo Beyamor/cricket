@@ -466,6 +466,18 @@ prelude = ->
 		     (cons (f (head s))
 		           (map f (tail s)))))"
 
+		"(defn reduce
+		   ([f acc s]
+		    (if (empty? s)
+		      acc
+		      (reduce f
+		              (f acc (head s))
+		              (tail s))))
+		    ([f s]
+		     (reduce f
+		             (f (head s))
+			     (tail s))))"
+
 		"(defmacro or
 		   [& terms]
 		   (if (empty? terms)
