@@ -465,6 +465,22 @@ prelude = ->
 		     s
 		     (cons (f (head s))
 		           (map f (tail s)))))"
+
+		"(defmacro or
+		   [& terms]
+		   (if (empty? terms)
+		     false
+		     (list 'if (head terms)
+		       (head terms)
+		       (cons 'or (tail terms)))))"
+
+		"(defmacro and
+		   [& terms]
+		   (if (empty? terms)
+		     true
+		     (list 'if (head terms)
+		       (cons 'and (tail terms))
+		       false)))"
 	]
 
 	for definition in lispDefinitions
