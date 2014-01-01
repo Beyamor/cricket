@@ -355,13 +355,14 @@ prelude = ->
 				return fn
 
 		"apply": new SpecialForm
-			more: (env, [fn, args...]) ->
-				list = args[args.length-1]
-				for i in [0...args.length-1]
-					list = ns.cons args[i], list
-				list = ns.cons fn, list
+			more: (env, args) ->
+				[fn, args..., list]	= (ns.eval arg, env for arg in args)
+				list			= new List list
 
-				return ns.eval new List(list), env
+				for arg in args
+					list = ns.cons arg, list
+
+				return fn.apply env, list.elements
 
 		"do": new SpecialForm
 			more: (env, exprs) ->
