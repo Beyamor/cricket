@@ -482,76 +482,73 @@ prelude = ->
 		"identity": new Fn
 			1: ([x]) -> x
 
-	lispDefinitions = [
-		"(def defmacro
-		   (macro [name arg-list body]
-		     (list 'def name
-		       (list 'macro arg-list body))))"
-
-		"(defmacro defn
-		    [name arg-list body]
+	ns.eval ns.readProgram("
+		(def defmacro
+		  (macro [name arg-list body]
 		    (list 'def name
-		      (list 'fn arg-list body)))"
+		      (list 'macro arg-list body))))
 
-		"(defn inc
-		   [x]
-		   (+ x 1))"
+		(defmacro defn
+		   [name arg-list body]
+		   (list 'def name
+		     (list 'fn arg-list body)))
 
-		"(defn dec
-		   [x]
-		   (- x 1))"
+		(defn inc
+		  [x]
+		  (+ x 1))
 
-		"(defmacro unless
-		   [pred? if-false if-true]
-		   (list 'if pred? if-true if-false))"
+		(defn dec
+		  [x]
+		  (- x 1))
 
-		"(defn map
-		   [f s]
+		(defmacro unless
+		  [pred? if-false if-true]
+		  (list 'if pred? if-true if-false))
+
+		(defn map
+		  [f s]
+		  (if (empty? s)
+		    s
+		    (cons (f (head s))
+		          (map f (tail s)))))
+
+		(defn reduce
+		  ([f acc s]
 		   (if (empty? s)
-		     s
-		     (cons (f (head s))
-		           (map f (tail s)))))"
-
-		"(defn reduce
-		   ([f acc s]
-		    (if (empty? s)
-		      acc
-		      (reduce f
-		              (f acc (head s))
-		              (tail s))))
-		    ([f s]
+		     acc
 		     (reduce f
-		             (f (head s))
-			     (tail s))))"
+		             (f acc (head s))
+		             (tail s))))
+		   ([f s]
+		    (reduce f
+		            (f (head s))
+		            (tail s))))
 
-		"(defn filter
-		   [p? s]
-		   (if (empty? s)
-		     s
-		     (if (p? (head s))
-		       (cons (head s)
-		             (filter p? (tail s)))
-		       (filter p? (tail s)))))"
+		(defn filter
+		  [p? s]
+		  (if (empty? s)
+		    s
+		    (if (p? (head s))
+		      (cons (head s)
+		            (filter p? (tail s)))
+		      (filter p? (tail s)))))
 
-		"(defmacro or
-		   [& terms]
-		   (if (empty? terms)
-		     false
-		     (list 'if (head terms)
-		       (head terms)
-		       (cons 'or (tail terms)))))"
+		(defmacro or
+		  [& terms]
+		  (if (empty? terms)
+		    false
+		    (list 'if (head terms)
+		      (head terms)
+		      (cons 'or (tail terms)))))
 
-		"(defmacro and
-		   [& terms]
-		   (if (empty? terms)
-		     true
-		     (list 'if (head terms)
-		       (cons 'and (tail terms))
-		       false)))"
-	]
-
-	for definition in lispDefinitions
-		ns.eval ns.read(definition), env
+		(defmacro and
+		  [& terms]
+		  (if (empty? terms)
+		    true
+		    (list 'if (head terms)
+		      (cons 'and (tail terms))
+		      false)))
+	"), env
 
 	return env
 
