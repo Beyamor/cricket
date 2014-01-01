@@ -61,7 +61,11 @@ ns.tokenize = (text) ->
 	return tokens
 
 class List
-	constructor: (@elements) ->
+	constructor: (list) ->
+		if list instanceof List
+			@elements = list.elements
+		else
+			@elements = list
 
 	toString: ->
 		s = "("
@@ -349,6 +353,15 @@ prelude = ->
 				fn.isMacro = true
 
 				return fn
+
+		"apply": new SpecialForm
+			more: (env, [fn, args...]) ->
+				list = args[args.length-1]
+				for i in [0...args.length-1]
+					list = ns.cons args[i], list
+				list = ns.cons fn, list
+
+				return ns.eval new List(list), env
 
 		"do": new SpecialForm
 			more: (env, exprs) ->
